@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+
 // राउट्स फाइल्स इम्पोर्ट करणे
 const companyRoutes = require('./routes/companyRoutes');
 const accountRoutes = require('./routes/accountRoutes');
@@ -49,4 +50,12 @@ app.use((err, req, res, next) => {
 // ६. एक्सप्रेस सर्व्ह बूट प्रोसेस
 app.listen(PORT, () => {
     console.log(`🚀 बॅकएंड सर्व्हर पोर्ट ${PORT} वर यशस्वीरित्या चालू झाला आहे...`);
+});
+
+db.connect((err) => {
+    if (err) {
+        console.log(err);
+    } else {
+        console.log("Database Connected");
+    }
 });

@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// १. सर्व आयटम्सची यादी मिळवणे (GET All Items)
+// 1. Get list of all items (GET All Items)
 exports.getAllItems = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM items ORDER BY id DESC');
@@ -10,7 +10,7 @@ exports.getAllItems = async (req, res) => {
     }
 };
 
-// २. नवीन आयटम मास्टर सेव्ह करणे (POST Create Item)
+// 2. Save new item master (POST Create Item)
 exports.createItem = async (req, res) => {
     try {
         const body = req.body || {};
@@ -34,23 +34,23 @@ exports.createItem = async (req, res) => {
         const description = body.description || null;
         const stock = parseInt(body.stock) || openingStock;
 
-        // अनिवार्य इनपुट व्हॅलिडेशन
+        // Mandatory input validation
         if (!name || !code || !printName) {
-            return res.status(400).json({ status: 'Error', message: 'Item Name, Code आणि Print Name अनिवार्य आहेत.' });
+            return res.status(400).json({ status: 'Error', message: 'Item Name, Code and Print Name are mandatory.' });
         }
 
-        // इमेज पाथ सेट करा (URL किंवा फाईल अपलोड)
+        // Set image path (URL or file upload)
         let savedImage = body.image || ""; 
         if (req.files && req.files.itemImg && req.files.itemImg.length > 0) {
             savedImage = `/uploads/${req.files.itemImg[0].filename}`; 
         }
 
-        // PDF Brochure पाथ सेट करा
+        // Set PDF Brochure path
         const pdfPath = (req.files && req.files.itemPdf && req.files.itemPdf.length > 0) 
             ? `/uploads/${req.files.itemPdf[0].filename}` 
             : null;
 
-        // ओपनिंग स्टॉक व्हॅल्यू कॅल्क्युलेशन
+        // Opening stock value calculation
         const stockValue = openingStock * purchasePrice;
 
         const sql = `INSERT INTO items 
@@ -64,31 +64,31 @@ exports.createItem = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(201).json({ status: 'Success', message: 'आयटम यशस्वीरित्या डेटाबेसमध्ये साठवला गेला!' });
+        res.status(201).json({ status: 'Success', message: 'Item saved successfully in the database!' });
 
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ status: 'Error', message: 'हा Item Code आधीपासूनच उपलब्ध आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'This Item Code is already available.' });
         }
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// ३. आयटम मास्टर अपडेट करणे (PUT Update Item)
+// 3. Update item master (PUT Update Item)
 exports.updateItem = async (req, res) => {
     try {
         const { id } = req.params;
         const body = req.body || {};
 
-        // १. आधी अस्तित्वात असलेला रेकॉर्ड शोधा
+        // 1. Find existing record
         const [existing] = await db.query('SELECT * FROM items WHERE id = ?', [id]);
         if (existing.length === 0) {
-            return res.status(404).json({ status: 'Error', message: 'आयटम सापडला नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'Item not found.' });
         }
 
         const oldData = existing[0];
 
-        // २. सर्व २१ फील्ड्ससाठी व्हॅल्यू मॅपिंग (नक्की डेटा न आल्यास जुना डेटा कायम राहील)
+        // 2. Value mapping for all 21 fields (keep old data if exact data is not received)
         const name = body.name !== undefined ? body.name : oldData.item_name;
         const code = body.code !== undefined ? body.code : oldData.item_code;
         const printName = body.printName !== undefined ? body.printName : oldData.print_name;
@@ -106,7 +106,7 @@ exports.updateItem = async (req, res) => {
         const description = body.description !== undefined ? body.description : oldData.item_specification;
         const stock = body.stock !== undefined ? parseInt(body.stock) || 0 : oldData.current_stock;
 
-        // इमेज हँडलिंग (नवीन फाईल > नवीन URL स्टिंग > जुनी फाईल)
+        // Image handling (New file > New URL string > Old file)
         let savedImage = oldData.image_path;
         if (req.files && req.files.itemImg && req.files.itemImg.length > 0) {
             savedImage = `/uploads/${req.files.itemImg[0].filename}`;
@@ -114,13 +114,13 @@ exports.updateItem = async (req, res) => {
             savedImage = body.image;
         }
 
-        // PDF Brochure हँडलिंग (नवीन PDF फाईल आल्यास अपडेट करा)
+        // PDF Brochure handling (Update if new PDF file is received)
         let savedPdf = oldData.pdf_path;
         if (req.files && req.files.itemPdf && req.files.itemPdf.length > 0) {
             savedPdf = `/uploads/${req.files.itemPdf[0].filename}`;
         }
 
-        // ३. पूर्ण २१ कॉलम्स अपडेट करणारी SQL क्विरी
+        // 3. SQL query to update all 21 columns
         const sql = `UPDATE items SET 
             item_name = ?, 
             item_code = ?, 
@@ -149,25 +149,25 @@ exports.updateItem = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(200).json({ status: 'Success', message: 'आयटम सर्व फील्ड्ससह डेटाबेसमध्ये यशस्वीरित्या अपडेट झाला!' });
+        res.status(200).json({ status: 'Success', message: 'Item updated successfully in the database with all fields!' });
 
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ status: 'Error', message: 'हा Item Code दुसऱ्या आयटमला जोडलेला आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'This Item Code is linked to another item.' });
         }
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// ४. आयटम डिलीट करणे (DELETE Item)
+// 4. Delete item (DELETE Item)
 exports.deleteItem = async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await db.query('DELETE FROM items WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ status: 'Error', message: 'आयटम सापडला नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'Item not found.' });
         }
-        res.status(200).json({ status: 'Success', message: 'आयटम यशस्वीरित्या डिलीट केला गेला!' });
+        res.status(200).json({ status: 'Success', message: 'Item deleted successfully!' });
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }

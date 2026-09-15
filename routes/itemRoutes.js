@@ -20,10 +20,10 @@ const fileFilter = (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|webp/;
         const isValid = allowedTypes.test(path.extname(file.originalname).toLowerCase()) && allowedTypes.test(file.mimetype);
         if (isValid) return cb(null, true);
-        cb(new Error('इमेज फक्त JPG, JPEG, PNG किंवा WEBP फॉरमॅटमध्येच असावी!'), false);
+        cb(new Error('Image must be in JPG, JPEG, PNG, or WEBP format only!'), false);
     } else if (file.fieldname === 'itemPdf') {
         if (file.mimetype === 'application/pdf') return cb(null, true);
-        cb(new Error('ब्रोशर फक्त PDF फॉरमॅटमध्येच असावे!'), false);
+        cb(new Error('Brochure must be in PDF format only!'), false);
     } else {
         cb(null, true);
     }
@@ -35,13 +35,13 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-// itemImg आणि itemPdf दोन्ही फाईल्स स्वीकारण्यासाठी fields मिडिलवेअर
+// Fields middleware to accept both itemImg and itemPdf files
 const itemUpload = upload.fields([
     { name: 'itemImg', maxCount: 1 },
     { name: 'itemPdf', maxCount: 1 }
 ]);
 
-// सेफ्टी ट्रॅकिंग मिडिलवेअर (Multer Errors पकडण्यासाठी)
+// Safety tracking middleware (to catch Multer errors)
 const uploadMiddleware = (req, res, next) => {
     itemUpload(req, res, (err) => {
         if (err instanceof multer.MulterError) {
@@ -56,7 +56,7 @@ const uploadMiddleware = (req, res, next) => {
 // API Endpoints Mapping
 router.get('/', itemController.getAllItems);
 router.post('/', uploadMiddleware, itemController.createItem);
-router.put('/:id', uploadMiddleware, itemController.updateItem); // ★ PUT वर देखील uploadMiddleware लावण्यात आला आहे
+router.put('/:id', uploadMiddleware, itemController.updateItem); // ★ uploadMiddleware is also applied to PUT
 router.delete('/:id', itemController.deleteItem);
 
 module.exports = router;

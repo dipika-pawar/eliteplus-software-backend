@@ -14,16 +14,16 @@ const fileFilter = (req, file, cb) => {
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname && mimetype) return cb(null, true);
-    cb(new Error('फक्त JPG, JPEG आणि PNG फाईल्स अपलोड करण्याची परवानगी आहे!'), false);
+    cb(new Error('Only JPG, JPEG, and PNG files are allowed!'), false);
 };
 
 const upload = multer({ storage: storage, limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: fileFilter });
 
-// ४ विशिष्ट फाईल फील्ड्स (बॅकएंड जे नावे शोधत आहे)
+// 4 specific file fields (that the backend expects)
 const cpUpload = upload.fields([
     { name: 'logoFile', maxCount: 1 },
     { name: 'qrFile', maxCount: 1 },
-    { name: 'stampFile', maxCount: 1 }, // नवीन फील्ड जोडली
+    { name: 'stampFile', maxCount: 1 }, // New field added
     { name: 'signFile', maxCount: 1 }
 ]);
 
@@ -31,7 +31,7 @@ const uploadMiddleware = (req, res, next) => {
     cpUpload(req, res, (err) => {
         if (err instanceof multer.MulterError) {
             let customMessage = `Multer Error (${err.code}): ${err.message}`;
-            if (err.field) customMessage += ` -> तुम्ही '${err.field}' नावाचे फील्ड पाठवले आहे.`;
+            if (err.field) customMessage += ` -> You have sent a field named '${err.field}'.`;
             return res.status(400).json({ status: 'Error', message: customMessage });
         } else if (err) {
             return res.status(400).json({ status: 'Error', message: err.message });

@@ -23,7 +23,7 @@ const fileFilter = (req, file, cb) => {
     if (extname && mimetype) {
         return cb(null, true);
     } else {
-        cb(new Error('फक्त JPG, JPEG आणि PNG फाईल्स अपलोड करायला परवानगी आहे!'), false);
+        cb(new Error('Only JPG, JPEG, and PNG files are allowed!'), false);
     }
 };
 
@@ -33,20 +33,20 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-// फाईल्स अपलोड करण्यासाठी अचूक 3 Keys (बॅकएंड जे मॅच करेल)
+// Exact 3 Keys for file upload (that the backend will match)
 const accountUpload = upload.fields([
     { name: 'panFile', maxCount: 1 },
     { name: 'gstFile', maxCount: 1 },
     { name: 'msmeFile', maxCount: 1 }
 ]);
 
-// एरर सेफ्टी ट्रॅकिंग मिडलवेअर
+// Error safety tracking middleware
 const uploadMiddleware = (req, res, next) => {
     accountUpload(req, res, (err) => {
         if (err instanceof multer.MulterError) {
             let msg = `Multer Error (${err.code}): ${err.message}`;
-            if (err.field) msg += ` -> चुकीची फील्ड: '${err.field}'`;
-            return res.status(400).json({ status: 'Error', message: msg + " पोस्टमनमध्ये फक्त panFile, gstFile, msmeFile वापरा आणि रिकामी रो डिलीट करा." });
+            if (err.field) msg += ` -> Incorrect field: '${err.field}'`;
+            return res.status(400).json({ status: 'Error', message: msg + " Use only panFile, gstFile, and msmeFile in Postman and delete any empty rows." });
         } else if (err) {
             return res.status(400).json({ status: 'Error', message: err.message });
         }

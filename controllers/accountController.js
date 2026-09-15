@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// 1. सर्व अकाउंट्सची यादी मिळवणे (GET)
+// 1. Get list of all accounts (GET)
 exports.getAllAccounts = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM accounts ORDER BY id DESC');
@@ -10,10 +10,10 @@ exports.getAllAccounts = async (req, res) => {
     }
 };
 
-// 2. नवीन अकाउंट मास्टर सेव्ह करणे (POST)
+// 2. Save new account master (POST)
 exports.createAccount = async (req, res) => {
     try {
-        // Safe Fallback Check: जर req.body कोणत्याही कारणाने उपलब्ध नसेल तर रिकामी ऑब्जेक्ट घ्या
+        // Safe Fallback Check: If req.body is not available for any reason, take an empty object
         const body = req.body || {};
 
         const id = body.id ? BigInt(body.id) : Date.now();
@@ -41,15 +41,15 @@ exports.createAccount = async (req, res) => {
         const outAlert = body.outAlert || 'No';
         const blockSales = body.blockSales || 'No';
 
-        // बेसिक डेटा व्हॅलिडेशन (आधीच अडवा जेणेकरून SQL क्रॅश होणार नाही)
+        // Basic data validation (Block early so SQL doesn't crash)
         if (!name || !group) {
             return res.status(400).json({ 
                 status: 'Error', 
-                message: "बॅकएंडला फॉर्ममधील टेक्स्ट डेटा मिळालेला नाही. कृपया पोस्टमन किंवा फ्रंटएंडवरून डेटा नीट पाठवल्याची खात्री करा." 
+                message: "Backend did not receive text data from the form. Please ensure data is sent correctly from Postman or frontend." 
             });
         }
 
-        // फाईल्सचे नावे मिळवा (नसल्यास फॉलबॅक '-')
+        // Get file names (fallback to '-' if not present)
         const panFileName = req.files && req.files.panFile ? req.files.panFile[0].filename : '-';
         const gstFileName = req.files && req.files.gstFile ? req.files.gstFile[0].filename : '-';
         const msmeFileName = req.files && req.files.msmeFile ? req.files.msmeFile[0].filename : '-';
@@ -66,14 +66,14 @@ exports.createAccount = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(201).json({ status: 'Success', message: 'Account Master यशस्वीरित्या साठवला गेला!' });
+        res.status(201).json({ status: 'Success', message: 'Account Master saved successfully!' });
 
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// 3. अकाउंट मास्टर अपडेट करणे (PUT)
+// 3. Update account master (PUT)
 exports.updateAccount = async (req, res) => {
     try {
         const { id } = req.params;
@@ -81,7 +81,7 @@ exports.updateAccount = async (req, res) => {
 
         const [existing] = await db.query('SELECT * FROM accounts WHERE id = ?', [id]);
         if (existing.length === 0) {
-            return res.status(404).json({ status: 'Error', message: 'अकाउंट सापडले नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'Account not found.' });
         }
 
         const name = body.name || existing[0].print_name;
@@ -126,22 +126,22 @@ exports.updateAccount = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(200).json({ status: 'Success', message: 'Account Master यशस्वीरित्या अपडेट झाला!' });
+        res.status(200).json({ status: 'Success', message: 'Account Master updated successfully!' });
 
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// 4. अकाउंट मास्टर डिलीट करणे (DELETE)
+// 4. Delete account master (DELETE)
 exports.deleteAccount = async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await db.query('DELETE FROM accounts WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ status: 'Error', message: 'अकाउंट सापडले नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'Account not found.' });
         }
-        res.status(200).json({ status: 'Success', message: 'अकाउंट यशस्वीरित्या डिलीट केले!' });
+        res.status(200).json({ status: 'Success', message: 'Account deleted successfully!' });
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }

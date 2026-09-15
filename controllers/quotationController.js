@@ -20,7 +20,7 @@ function getCurrentFinancialYear() {
     return `${startFormatted}-${endFormatted}`; 
 }
 
-// ०. पुढील ऑटो-इन्क्रिमेंटेड वाउचर नंबर मिळवणे (GET Next Voucher Number)
+// 0. Get the next auto-incremented voucher number (GET Next Voucher Number)
 exports.getNextVoucherNumber = async (req, res) => {
     try {
         const fyStr = getCurrentFinancialYear();
@@ -48,7 +48,7 @@ exports.getNextVoucherNumber = async (req, res) => {
     }
 };
 
-// १. सर्व कोटेशन्सची यादी (GET Directory)
+// 1. Get list of all quotations (GET Directory)
 exports.getAllQuotations = async (req, res) => {
     try {
         const sql = `
@@ -64,7 +64,7 @@ exports.getAllQuotations = async (req, res) => {
     }
 };
 
-// २. ठराविक कोटेशनचे पूर्ण तपशील मिळवणे (GET Single View)
+// 2. Get full details of a specific quotation (GET Single View)
 exports.getQuotationById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -86,7 +86,7 @@ exports.getQuotationById = async (req, res) => {
     }
 };
 
-// ३. नवीन सेल्स कोटेशन आणि त्याचे डायनॅमिक आयटम्स सेव्ह करणे (POST)
+// 3. Save new sales quotation and its dynamic items (POST)
 exports.createQuotation = async (req, res) => {
     const connection = await db.getConnection();
     try {
@@ -99,7 +99,7 @@ exports.createQuotation = async (req, res) => {
 
         const [partyRows] = await connection.query('SELECT id FROM accounts WHERE print_name = ?', [partyName]);
         if (partyRows.length === 0) {
-            throw new Error(`पार्टी मास्टरमध्ये '${partyName}' नावाची संस्था सापडलेली नाही.`);
+            throw new Error(`Organization named '${partyName}' not found in Party Master.`);
         }
         const accountId = partyRows[0].id;
 
@@ -119,7 +119,7 @@ exports.createQuotation = async (req, res) => {
         for (let item of items) {
             const [itemRows] = await connection.query('SELECT id FROM items WHERE item_name = ?', [item.name]);
             if (itemRows.length === 0) {
-                throw new Error(`आयटम मास्टरमध्ये '${item.name}' प्रॉडक्ट सापडलेला नाही.`);
+                throw new Error(`Product '${item.name}' not found in Item Master.`);
             }
             const itemId = itemRows[0].id;
 
@@ -134,7 +134,7 @@ exports.createQuotation = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(201).json({ status: 'Success', message: 'नवीन सेल्स कोटेशन वाउचर यशस्वीरित्या जतन झाले!' });
+        res.status(201).json({ status: 'Success', message: 'New sales quotation voucher saved successfully!' });
     } catch (error) {
         await connection.rollback();
         res.status(400).json({ status: 'Error', message: error.message });
@@ -143,7 +143,7 @@ exports.createQuotation = async (req, res) => {
     }
 };
 
-// ४. जुने सेल्स कोटेशन अपडेट करणे (PUT)
+// 4. Update existing sales quotation (PUT)
 exports.updateQuotation = async (req, res) => {
     const connection = await db.getConnection();
     try {
@@ -190,7 +190,7 @@ exports.updateQuotation = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(200).json({ status: 'Success', message: 'सेल्स कोटेशन वाउचर यशस्वीरित्या अपडेट झाले!' });
+        res.status(200).json({ status: 'Success', message: 'Sales quotation voucher updated successfully!' });
     } catch (error) {
         await connection.rollback();
         res.status(400).json({ status: 'Error', message: error.message });
@@ -199,7 +199,7 @@ exports.updateQuotation = async (req, res) => {
     }
 };
 
-// ५. कोटेशन डिलीट करणे (DELETE)
+// 5. Delete quotation (DELETE)
 exports.deleteQuotation = async (req, res) => {
     try {
         const { id } = req.params;
@@ -207,7 +207,7 @@ exports.deleteQuotation = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ status: 'Error', message: 'Voucher not found.' });
         }
-        res.status(200).json({ status: 'Success', message: 'वाउचर यशस्वीरित्या डिलीट केले!' });
+        res.status(200).json({ status: 'Success', message: 'Voucher deleted successfully!' });
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }

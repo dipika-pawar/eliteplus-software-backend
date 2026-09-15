@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// १. सर्व युनिट्स मिळवणे (GET /api/unit)
+// 1. Get all units (GET /api/unit)
 exports.getAllUnits = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT unit_name FROM units ORDER BY id ASC');
@@ -10,7 +10,7 @@ exports.getAllUnits = async (req, res) => {
     }
 };
 
-// २. नवीन युनिट डेटाबेसमध्ये सेव्ह करणे (POST /api/unit)
+// 2. Save new unit in the database (POST /api/unit)
 exports.createUnit = async (req, res) => {
     try {
         const { unitName } = req.body;
@@ -21,16 +21,16 @@ exports.createUnit = async (req, res) => {
 
         const trimmedUnit = unitName.trim();
 
-        // ड्युप्लिकेट युनिट तपासणे
+        // Check for duplicate unit
         const [existing] = await db.query('SELECT * FROM units WHERE LOWER(unit_name) = LOWER(?)', [trimmedUnit]);
         if (existing.length > 0) {
-            return res.status(400).json({ status: 'Error', message: 'हा Unit आधीपासूनच उपलब्ध आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'This Unit already exists.' });
         }
 
         const [result] = await db.query('INSERT INTO units (unit_name) VALUES (?)', [trimmedUnit]);
         res.status(201).json({ 
             status: 'Success', 
-            message: 'नवीन Unit यशस्वीरित्या डेटाबेसमध्ये जोडला गेला!', 
+            message: 'New Unit added successfully to the database!', 
             unitName: trimmedUnit, 
             insertId: result.insertId 
         });

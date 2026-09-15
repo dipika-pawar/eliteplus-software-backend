@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// १. सर्व युझर्सची यादी मिळवणे (GET)
+// 1. Get list of all users (GET)
 exports.getAllUsers = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM users ORDER BY id DESC');
@@ -10,41 +10,41 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-// २. नवीन युझर तयार करणे (POST)
+// 2. Create new user (POST)
 exports.createUser = async (req, res) => {
     try {
         const { fName, uName, role, email, phone } = req.body;
 
-        // बेसिक व्हॅलिडेशन
+        // Basic validation
         if (!fName || !uName || !email) {
-            return res.status(400).json({ status: 'Error', message: 'Full Name, Username आणि Email भरणे अनिवार्य आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'Full Name, Username, and Email are mandatory.' });
         }
 
         const sql = `INSERT INTO users (full_name, username, role, email, phone) VALUES (?, ?, ?, ?, ?)`;
         const values = [fName, uName, role || 'User', email, phone || ''];
 
         await db.query(sql, values);
-        res.status(201).json({ status: 'Success', message: 'नवीन युझर यशस्वीरित्या साठवला गेला!' });
+        res.status(201).json({ status: 'Success', message: 'New user saved successfully!' });
 
     } catch (error) {
-        // डुप्लिकेट युझरनेम किंवा ईमेल चेक करणे
+        // Check for duplicate username or email
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ status: 'Error', message: 'हा Username किंवा Email आधीपासूनच वापरला गेला आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'This Username or Email is already in use.' });
         }
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// ३. युझरचा डेटा अपडेट करणे (PUT)
+// 3. Update user data (PUT)
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const { fName, uName, role, email, phone } = req.body;
 
-        // युझर डेटाबेसमध्ये अस्तित्त्वात आहे का ते तपासा
+        // Check if user exists in the database
         const [existing] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
         if (existing.length === 0) {
-            return res.status(404).json({ status: 'Error', message: 'युझर सापडला नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'User not found.' });
         }
 
         const sql = `UPDATE users SET full_name=?, username=?, role=?, email=?, phone=? WHERE id=?`;
@@ -58,26 +58,26 @@ exports.updateUser = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(200).json({ status: 'Success', message: 'युझरचा तपशील यशस्वीरित्या अपडेट झाला!' });
+        res.status(200).json({ status: 'Success', message: 'User details updated successfully!' });
 
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ status: 'Error', message: 'हा Username किंवा Email आधीपासूनच वापरला गेला आहे.' });
+            return res.status(400).json({ status: 'Error', message: 'This Username or Email is already in use.' });
         }
         res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
-// ४. युझर डिलीट करणे (DELETE)
+// 4. Delete user (DELETE)
 exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await db.query('DELETE FROM users WHERE id = ?', [id]);
         
         if (result.affectedRows === 0) {
-            return res.status(404).json({ status: 'Error', message: 'युझर सापडला नाही.' });
+            return res.status(404).json({ status: 'Error', message: 'User not found.' });
         }
-        res.status(200).json({ status: 'Success', message: 'युझर यशस्वीरित्या डिलीट केला!' });
+        res.status(200).json({ status: 'Success', message: 'User deleted successfully!' });
     } catch (error) {
         res.status(500).json({ status: 'Error', error: error.message });
     }

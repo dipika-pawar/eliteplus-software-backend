@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// १. सर्व कंपन्यांची यादी मिळवणे (GET)
+// 1. Get list of all companies (GET)
 exports.getAllCompanies = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM company_profiles ORDER BY id DESC');
@@ -10,7 +10,7 @@ exports.getAllCompanies = async (req, res) => {
     }
 };
 
-// २. नवीन कंपनी प्रोफाइल सेव्ह करणे (POST)
+// 2. Save new company profile (POST)
 exports.createCompany = async (req, res) => {
     try {
         const {
@@ -21,7 +21,7 @@ exports.createCompany = async (req, res) => {
         } = req.body;
 
         if (!req.files || !req.files.logoFile || !req.files.qrFile || !req.files.stampFile || !req.files.signFile) {
-            return res.status(400).json({ message: "सर्व ४ फाईल्स (Logo, QR, Stamp, Signature) अपलोड करणे अनिवार्य आहे." });
+            return res.status(400).json({ message: "All 4 files (Logo, QR, Stamp, Signature) are mandatory to upload." });
         }
 
         const logoFile = req.files.logoFile[0].filename;
@@ -42,14 +42,14 @@ exports.createCompany = async (req, res) => {
         ];
 
         const [result] = await db.query(sql, values);
-        res.status(201).json({ message: "कंपनी प्रोफाइल यशस्वीरित्या साठवली!", insertId: result.insertId });
+        res.status(201).json({ message: "Company profile saved successfully!", insertId: result.insertId });
 
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
-// ३. कंपनी प्रोफाइल अपडेट करणे (PUT)
+// 3. Update company profile (PUT)
 exports.updateCompany = async (req, res) => {
     try {
         const { id } = req.params;
@@ -62,7 +62,7 @@ exports.updateCompany = async (req, res) => {
 
         const [existing] = await db.query('SELECT * FROM company_profiles WHERE id = ?', [id]);
         if (existing.length === 0) {
-            return res.status(404).json({ message: "कंपनी प्रोफाइल सापडली नाही." });
+            return res.status(404).json({ message: "Company profile not found." });
         }
 
         const logoFile = req.files && req.files.logoFile ? req.files.logoFile[0].filename : existing[0].logo_file;
@@ -85,22 +85,22 @@ exports.updateCompany = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(200).json({ message: "कंपनी प्रोफाइल अपडेट झाली!" });
+        res.status(200).json({ message: "Company profile updated successfully!" });
 
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
 
-// ४. कंपनी प्रोफाइल डिलीट करणे (DELETE)
+// 4. Delete company profile (DELETE)
 exports.deleteCompany = async (req, res) => {
     try {
         const { id } = req.params;
         const [result] = await db.query('DELETE FROM company_profiles WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "डेटा सापडला नाही." });
+            return res.status(404).json({ message: "Data not found." });
         }
-        res.status(200).json({ message: "कंपनी प्रोफाइल डिलीट करण्यात आली आहे." });
+        res.status(200).json({ message: "Company profile deleted successfully." });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

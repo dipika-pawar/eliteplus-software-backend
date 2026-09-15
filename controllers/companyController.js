@@ -16,7 +16,8 @@ exports.createCompany = async (req, res) => {
         const {
             compName, printName, gstNumber, gstStatus, panNumber,
             cinNumber, tanNumber, udyamNumber, fyBeginning,
-            compEmail, compMobile, compWebsite, bankAccounts, regAddress
+            compEmail, compMobile, compWebsite, 
+            acName, acNo, ifscCode, bankName, regAddress
         } = req.body;
 
         if (!req.files || !req.files.logoFile || !req.files.qrFile || !req.files.stampFile || !req.files.signFile) {
@@ -29,14 +30,15 @@ exports.createCompany = async (req, res) => {
         const signFile = req.files.signFile[0].filename;
 
         const sql = `INSERT INTO company_profiles 
-        (company_name, print_name, gst_number, gst_status, pan_number, cin_number, tan_number, udyam_number, fy_beginning, company_email, company_mobile, company_website, bank_accounts, registered_address, logo_file, qr_file, stamp_file, signature_file) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (company_name, print_name, gst_number, gst_status, pan_number, cin_number, tan_number, udyam_number, fy_beginning, company_email, company_mobile, company_website, ac_name, ac_no, ifsc_code, bank_name, registered_address, logo_file, qr_file, stamp_file, signature_file) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const values = [
             compName, printName, gstNumber, gstStatus, panNumber,
             cinNumber || null, tanNumber || null, udyamNumber || null, fyBeginning,
-            compEmail, compMobile, compWebsite || null, bankAccounts || null, regAddress,
-            logoFile, qrFile, stampFile, signFile
+            compEmail, compMobile, compWebsite || null, 
+            acName || null, acNo || null, ifscCode || null, bankName || null, 
+            regAddress, logoFile, qrFile, stampFile, signFile
         ];
 
         const [result] = await db.query(sql, values);
@@ -54,7 +56,8 @@ exports.updateCompany = async (req, res) => {
         const {
             compName, printName, gstNumber, gstStatus, panNumber,
             cinNumber, tanNumber, udyamNumber, fyBeginning,
-            compEmail, compMobile, compWebsite, bankAccounts, regAddress
+            compEmail, compMobile, compWebsite, 
+            acName, acNo, ifscCode, bankName, regAddress
         } = req.body;
 
         const [existing] = await db.query('SELECT * FROM company_profiles WHERE id = ?', [id]);
@@ -70,14 +73,15 @@ exports.updateCompany = async (req, res) => {
         const sql = `UPDATE company_profiles SET 
         company_name=?, print_name=?, gst_number=?, gst_status=?, pan_number=?, 
         cin_number=?, tan_number=?, udyam_number=?, fy_beginning=?, company_email=?, 
-        company_mobile=?, company_website=?, bank_accounts=?, registered_address=?, 
+        company_mobile=?, company_website=?, ac_name=?, ac_no=?, ifsc_code=?, bank_name=?, registered_address=?, 
         logo_file=?, qr_file=?, stamp_file=?, signature_file=? WHERE id=?`;
 
         const values = [
             compName, printName, gstNumber, gstStatus, panNumber,
             cinNumber || null, tanNumber || null, udyamNumber || null, fyBeginning,
-            compEmail, compMobile, compWebsite || null, bankAccounts || null, regAddress,
-            logoFile, qrFile, stampFile, signFile, id
+            compEmail, compMobile, compWebsite || null, 
+            acName || null, acNo || null, ifscCode || null, bankName || null, 
+            regAddress, logoFile, qrFile, stampFile, signFile, id
         ];
 
         await db.query(sql, values);

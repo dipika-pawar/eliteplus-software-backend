@@ -4,22 +4,20 @@ const db = require('../db');
 function getCurrentFinancialYear() {
     const today = new Date();
     let year = today.getFullYear();
-    let month = today.getMonth() + 1; // 1-based (Jan = 1, March = 3)
+    let month = today.getMonth() + 1;
 
     let startYear, endYear;
-    // March (3) to Dec (12) falls in current year to next year
     if (month >= 3) {
         startYear = year;
         endYear = year + 1;
     } else {
-        // Jan (1) and Feb (2) fall in previous year to current year
         startYear = year - 1;
         endYear = year;
     }
 
     const startFormatted = startYear;
     const endFormatted = endYear.toString().slice(-2);
-    return `${startFormatted}-${endFormatted}`; // Example: 2026-27
+    return `${startFormatted}-${endFormatted}`; 
 }
 
 // ०. पुढील ऑटो-इन्क्रिमेंटेड वाउचर नंबर मिळवणे (GET Next Voucher Number)
@@ -28,7 +26,6 @@ exports.getNextVoucherNumber = async (req, res) => {
         const fyStr = getCurrentFinancialYear();
         const prefix = `QTN/${fyStr}/`;
 
-        // Current Financial Year मधील शेवटचा वाउचर नंबर शोधणे
         const [rows] = await db.query(
             "SELECT voucher_no FROM quotations WHERE voucher_no LIKE ? ORDER BY id DESC LIMIT 1",
             [`${prefix}%`]
@@ -96,7 +93,7 @@ exports.createQuotation = async (req, res) => {
         await connection.beginTransaction();
         const {
             id, series, date, voucherNo, saleType, partyName, matCentre,
-            narration, discountPercent, subtotal, taxableAmount, gstTotal,
+            narration, termsConditions, discountPercent, subtotal, taxableAmount, gstTotal,
             discountAmount, roundOff, grandTotal, amountInWords, items
         } = req.body;
 
@@ -110,12 +107,12 @@ exports.createQuotation = async (req, res) => {
         const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
         const qSql = `INSERT INTO quotations 
-        (id, series, quotation_date, voucher_no, sale_type, account_id, material_centre, narration, discount_percentage, subtotal, taxable_amount, gst_total, discount_amount, round_off, grand_total, amount_in_words) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (id, series, quotation_date, voucher_no, sale_type, account_id, material_centre, narration, terms_conditions, discount_percentage, subtotal, taxable_amount, gst_total, discount_amount, round_off, grand_total, amount_in_words) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         await connection.query(qSql, [
             id, series, formattedDate, voucherNo, saleType, accountId, matCentre, 
-            narration, discountPercent, subtotal, taxableAmount, gstTotal, 
+            narration, termsConditions, discountPercent, subtotal, taxableAmount, gstTotal, 
             discountAmount, roundOff, grandTotal, amountInWords
         ]);
 
@@ -154,7 +151,7 @@ exports.updateQuotation = async (req, res) => {
         const { id } = req.params;
         const {
             series, date, voucherNo, saleType, partyName, matCentre,
-            narration, discountPercent, subtotal, taxableAmount, gstTotal,
+            narration, termsConditions, discountPercent, subtotal, taxableAmount, gstTotal,
             discountAmount, roundOff, grandTotal, amountInWords, items
         } = req.body;
 
@@ -166,12 +163,12 @@ exports.updateQuotation = async (req, res) => {
         const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
 
         const uSql = `UPDATE quotations SET 
-        series=?, quotation_date=?, voucher_no=?, sale_type=?, account_id=?, material_centre=?, narration=?, 
+        series=?, quotation_date=?, voucher_no=?, sale_type=?, account_id=?, material_centre=?, narration=?, terms_conditions=?, 
         discount_percentage=?, subtotal=?, taxable_amount=?, gst_total=?, discount_amount=?, round_off=?, grand_total=?, amount_in_words=? 
         WHERE id=?`;
         
         await connection.query(uSql, [
-            series, formattedDate, voucherNo, saleType, accountId, matCentre, narration, 
+            series, formattedDate, voucherNo, saleType, accountId, matCentre, narration, termsConditions, 
             discountPercent, subtotal, taxableAmount, gstTotal, discountAmount, roundOff, grandTotal, amountInWords, id
         ]);
 

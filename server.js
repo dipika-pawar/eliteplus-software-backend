@@ -22,6 +22,7 @@ app.use(express.json()); // To read JSON payloads
 app.use(express.urlencoded({ extended: true })); // To read form data (URL-encoded)
 
 // 2. Automatically Create Uploads Folder (Safety Check for Multer)
+// टीप: Vercel वर हा फोल्डर कायमस्वरूपी काम करणार नाही, पण लोकल टेस्टिंगसाठी हा कोड असाच राहू द्या.
 const uploadsDir = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
@@ -30,7 +31,6 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // 3. Serve Static Files
-// Used to make images and documents accessible to the frontend
 app.use('/uploads', express.static(uploadsDir));
 
 // 4. Main API Routes Mapping
@@ -43,11 +43,8 @@ app.use('/api/unit', unitRoutes);             // Unit management
 app.use('/api/tax', taxRoutes);               // Tax management
 
 // 5. Global Error Handler Middleware
-// Prevents the system from crashing due to unhandled errors
 app.use((err, req, res, next) => {
-
     console.error("❌ Server Error Pipeline:", err.stack);
-
     res.status(500).json({
         status: 'Error',
         message: 'Something went wrong on the server!',
@@ -55,7 +52,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 6. Start Express Server
-app.listen(PORT, () => {
-    console.log(`🚀 Backend server is running successfully on port ${PORT}...`);
-});
+// 6. Start Express Server (Updated for Vercel)
+// जर आपण लोकल कॉम्प्युटरवर असू तरच सर्व्हर listen करेल
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend server is running successfully on port ${PORT}...`);
+    });
+}
+
+// Vercel Serverless Function साठी app export करणे अनिवार्य आहे
+module.exports = app;

@@ -2,17 +2,21 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 const itemController = require('../controllers/itemController');
 
-// Storage Configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.fieldname + path.extname(file.originalname));
-    }
-});
+// =====================================================
+// SUPABASE CLIENT INITIALIZATION
+// =====================================================
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+);
+
+// =====================================================
+// MULTER MEMORY STORAGE CONFIGURATION
+// =====================================================
+const storage = multer.memoryStorage();
 
 // File Type Validation Filters
 const fileFilter = (req, file, cb) => {
@@ -41,22 +45,51 @@ const itemUpload = upload.fields([
     { name: 'itemPdf', maxCount: 1 }
 ]);
 
-// Safety tracking middleware (to catch Multer errors)
-const uploadMiddleware = (req, res, next) => {
-    itemUpload(req, res, (err) => {
+// =====================================================
+// UPLOAD MIDDLEWARE WITH SUPABASE CLOUD UPLOAD
+// =====================================================
+const uploadMiddleware = async (req, res, next) => {
+    itemUpload(req, res, async (err) => {
         if (err instanceof multer.MulterError) {
             return res.status(400).json({ status: 'Error', message: `Multer Error: ${err.message}` });
         } else if (err) {
             return res.status(400).json({ status: 'Error', message: err.message });
         }
-        next();
+
+        try {
+            if (req.files) {
+                req.supabaseFiles = {};
+                for (const fieldName in req.files) {
+                    const file = req.files[fieldName][0];
+                    const uniqueFilename = `${Date.now()}-${fieldName}${path.extname(file.originalname)}`;
+                    
+                    // Upload buffer directly to Supabase Storage 'uploads' bucket
+                    const { error } = await supabase.storage
+                        .from('uploads')
+                        .upload(uniqueFilename, file.buffer, {
+                            contentType: file.mimetype,
+                            upsert: false
+                        });
+
+                    if (error) {
+                        throw new Error(`Supabase upload failed for ${fieldName}: ${error.message}`);
+                    }
+
+                    req.supabaseFiles[fieldName] = uniqueFilename;
+                }
+            }
+            next();
+        } catch (uploadErr) {
+            console.error("❌ Cloud Upload Error:", uploadErr);
+            return res.status(500).json({ status: 'Error', message: uploadErr.message });
+        }
     });
 };
 
 // API Endpoints Mapping
 router.get('/', itemController.getAllItems);
 router.post('/', uploadMiddleware, itemController.createItem);
-router.put('/:id', uploadMiddleware, itemController.updateItem); // ★ uploadMiddleware is also applied to PUT
+router.put('/:id', uploadMiddleware, itemController.updateItem);
 router.delete('/:id', itemController.deleteItem);
 
 module.exports = router;

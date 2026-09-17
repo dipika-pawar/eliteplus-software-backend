@@ -2,17 +2,21 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 const accountController = require('../controllers/accountController');
 
-// Storage Configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.fieldname + path.extname(file.originalname));
-    }
-});
+// =====================================================
+// SUPABASE CLIENT INITIALIZATION
+// =====================================================
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+);
+
+// =====================================================
+// MULTER MEMORY STORAGE CONFIGURATION
+// =====================================================
+const storage = multer.memoryStorage();
 
 // File Type Filter
 const fileFilter = (req, file, cb) => {
@@ -33,24 +37,53 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
-// Exact 3 Keys for file upload (that the backend will match)
+// Exact 3 Keys for file upload
 const accountUpload = upload.fields([
     { name: 'panFile', maxCount: 1 },
     { name: 'gstFile', maxCount: 1 },
     { name: 'msmeFile', maxCount: 1 }
 ]);
 
-// Error safety tracking middleware
-const uploadMiddleware = (req, res, next) => {
-    accountUpload(req, res, (err) => {
+// =====================================================
+// UPLOAD MIDDLEWARE WITH SUPABASE CLOUD UPLOAD
+// =====================================================
+const uploadMiddleware = async (req, res, next) => {
+    accountUpload(req, res, async (err) => {
         if (err instanceof multer.MulterError) {
             let msg = `Multer Error (${err.code}): ${err.message}`;
             if (err.field) msg += ` -> Incorrect field: '${err.field}'`;
-            return res.status(400).json({ status: 'Error', message: msg + " Use only panFile, gstFile, and msmeFile in Postman and delete any empty rows." });
+            return res.status(400).json({ status: 'Error', message: msg + " Use only panFile, gstFile, and msmeFile." });
         } else if (err) {
             return res.status(400).json({ status: 'Error', message: err.message });
         }
-        next();
+
+        try {
+            if (req.files) {
+                req.supabaseFiles = {};
+                for (const fieldName in req.files) {
+                    const file = req.files[fieldName][0];
+                    const uniqueFilename = `${Date.now()}-${fieldName}${path.extname(file.originalname)}`;
+                    
+                    // Upload buffer directly to Supabase Storage 'uploads' bucket
+                    const { error } = await supabase.storage
+                        .from('uploads')
+                        .upload(uniqueFilename, file.buffer, {
+                            contentType: file.mimetype,
+                            upsert: false
+                        });
+
+                    if (error) {
+                        throw new Error(`Supabase upload failed for ${fieldName}: ${error.message}`);
+                    }
+
+                    req.supabaseFiles[fieldName] = uniqueFilename;
+                }
+            }
+            next();
+        } catch (uploadErr) {
+            console.error("❌ Cloud Upload Error:", uploadErr);
+            return res.status(500).json({ status: 'Error', message: uploadErr.message });
+        }
     });
 };
 

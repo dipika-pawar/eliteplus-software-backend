@@ -20,14 +20,15 @@ exports.createCompany = async (req, res) => {
             acNo, ifscCode, bankName, regAddress
         } = req.body;
 
-        if (!req.files || !req.files.logoFile || !req.files.qrFile || !req.files.stampFile || !req.files.signFile) {
+        // Check if files exist from middleware (req.supabaseFiles)
+        if (!req.supabaseFiles || !req.supabaseFiles.logoFile || !req.supabaseFiles.qrFile || !req.supabaseFiles.stampFile || !req.supabaseFiles.signFile) {
             return res.status(400).json({ message: "All 4 files (Logo, QR, Stamp, Signature) are mandatory to upload." });
         }
 
-        const logoFile = req.files.logoFile[0].filename;
-        const qrFile = req.files.qrFile[0].filename;
-        const stampFile = req.files.stampFile[0].filename;
-        const signFile = req.files.signFile[0].filename;
+        const logoFile = req.supabaseFiles.logoFile;
+        const qrFile = req.supabaseFiles.qrFile;
+        const stampFile = req.supabaseFiles.stampFile;
+        const signFile = req.supabaseFiles.signFile;
 
         const sql = `INSERT INTO company_profiles 
         (company_name, print_name, gst_number, gst_status, pan_number, cin_number, tan_number, udyam_number, fy_beginning, company_email, company_mobile, company_website, ac_no, ifsc_code, bank_name, registered_address, logo_file, qr_file, stamp_file, signature_file) 
@@ -65,10 +66,11 @@ exports.updateCompany = async (req, res) => {
             return res.status(404).json({ message: "Company profile not found." });
         }
 
-        const logoFile = req.files && req.files.logoFile ? req.files.logoFile[0].filename : existing[0].logo_file;
-        const qrFile = req.files && req.files.qrFile ? req.files.qrFile[0].filename : existing[0].qr_file;
-        const stampFile = req.files && req.files.stampFile ? req.files.stampFile[0].filename : existing[0].stamp_file;
-        const signFile = req.files && req.files.signFile ? req.files.signFile[0].filename : existing[0].signature_file;
+        // Get new uploaded file names from Supabase middleware, or keep existing database file names if not uploaded
+        const logoFile = req.supabaseFiles && req.supabaseFiles.logoFile ? req.supabaseFiles.logoFile : existing[0].logo_file;
+        const qrFile = req.supabaseFiles && req.supabaseFiles.qrFile ? req.supabaseFiles.qrFile : existing[0].qr_file;
+        const stampFile = req.supabaseFiles && req.supabaseFiles.stampFile ? req.supabaseFiles.stampFile : existing[0].stamp_file;
+        const signFile = req.supabaseFiles && req.supabaseFiles.signFile ? req.supabaseFiles.signFile : existing[0].signature_file;
 
         const sql = `UPDATE company_profiles SET 
         company_name=?, print_name=?, gst_number=?, gst_status=?, pan_number=?, 

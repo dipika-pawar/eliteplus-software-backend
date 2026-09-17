@@ -39,15 +39,15 @@ exports.createItem = async (req, res) => {
             return res.status(400).json({ status: 'Error', message: 'Item Name, Code and Print Name are mandatory.' });
         }
 
-        // Set image path (URL or file upload)
+        // Set image path from Supabase upload or fallback to body image
         let savedImage = body.image || ""; 
-        if (req.files && req.files.itemImg && req.files.itemImg.length > 0) {
-            savedImage = `/uploads/${req.files.itemImg[0].filename}`; 
+        if (req.supabaseFiles && req.supabaseFiles.itemImg) {
+            savedImage = req.supabaseFiles.itemImg; 
         }
 
-        // Set PDF Brochure path
-        const pdfPath = (req.files && req.files.itemPdf && req.files.itemPdf.length > 0) 
-            ? `/uploads/${req.files.itemPdf[0].filename}` 
+        // Set PDF Brochure path from Supabase upload
+        const pdfPath = (req.supabaseFiles && req.supabaseFiles.itemPdf) 
+            ? req.supabaseFiles.itemPdf 
             : null;
 
         // Opening stock value calculation
@@ -74,7 +74,7 @@ exports.createItem = async (req, res) => {
     }
 };
 
-// 3. Update item master (PUT Update Item)
+// 3. update item master (PUT Update Item)
 exports.updateItem = async (req, res) => {
     try {
         const { id } = req.params;
@@ -88,7 +88,7 @@ exports.updateItem = async (req, res) => {
 
         const oldData = existing[0];
 
-        // 2. Value mapping for all 21 fields (keep old data if exact data is not received)
+        // 2. Value mapping for all fields
         const name = body.name !== undefined ? body.name : oldData.item_name;
         const code = body.code !== undefined ? body.code : oldData.item_code;
         const printName = body.printName !== undefined ? body.printName : oldData.print_name;
@@ -106,21 +106,21 @@ exports.updateItem = async (req, res) => {
         const description = body.description !== undefined ? body.description : oldData.item_specification;
         const stock = body.stock !== undefined ? parseInt(body.stock) || 0 : oldData.current_stock;
 
-        // Image handling (New file > New URL string > Old file)
+        // Image handling from Supabase or body
         let savedImage = oldData.image_path;
-        if (req.files && req.files.itemImg && req.files.itemImg.length > 0) {
-            savedImage = `/uploads/${req.files.itemImg[0].filename}`;
+        if (req.supabaseFiles && req.supabaseFiles.itemImg) {
+            savedImage = req.supabaseFiles.itemImg;
         } else if (body.image) {
             savedImage = body.image;
         }
 
-        // PDF Brochure handling (Update if new PDF file is received)
+        // PDF Brochure handling from Supabase
         let savedPdf = oldData.pdf_path;
-        if (req.files && req.files.itemPdf && req.files.itemPdf.length > 0) {
-            savedPdf = `/uploads/${req.files.itemPdf[0].filename}`;
+        if (req.supabaseFiles && req.supabaseFiles.itemPdf) {
+            savedPdf = req.supabaseFiles.itemPdf;
         }
 
-        // 3. SQL query to update all 21 columns
+        // 3. SQL query to update columns
         const sql = `UPDATE items SET 
             item_name = ?, 
             item_code = ?, 

@@ -1,10 +1,10 @@
-require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-
-// Initialize Supabase
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Vercel Environment Variables मधून Supabase कनेक्ट करणे
+const supabase = createClient(
+  process.env.SUPABASE_URL, 
+  process.env.SUPABASE_ANON_KEY
+);
 
 module.exports = supabase;

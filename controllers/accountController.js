@@ -6,14 +6,13 @@ exports.getAllAccounts = async (req, res) => {
         const [rows] = await db.query('SELECT * FROM accounts ORDER BY id DESC');
         res.status(200).json(rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: 'Error', error: error.message });
     }
 };
 
 // 2. Save new account master (POST)
 exports.createAccount = async (req, res) => {
     try {
-        // Safe Fallback Check: If req.body is not available for any reason, take an empty object
         const body = req.body || {};
 
         const id = body.id ? BigInt(body.id) : Date.now();
@@ -41,18 +40,17 @@ exports.createAccount = async (req, res) => {
         const outAlert = body.outAlert || 'No';
         const blockSales = body.blockSales || 'No';
 
-        // Basic data validation (Block early so SQL doesn't crash)
         if (!name || !group) {
             return res.status(400).json({ 
                 status: 'Error', 
-                message: "Backend did not receive text data from the form. Please ensure data is sent correctly from Postman or frontend." 
+                message: "Backend did not receive text data from the form." 
             });
         }
 
-        // Get file names (fallback to '-' if not present)
-        const panFileName = req.files && req.files.panFile ? req.files.panFile[0].filename : '-';
-        const gstFileName = req.files && req.files.gstFile ? req.files.gstFile[0].filename : '-';
-        const msmeFileName = req.files && req.files.msmeFile ? req.files.msmeFile[0].filename : '-';
+        // Get file names from Supabase middleware (req.supabaseFiles)
+        const panFileName = req.supabaseFiles && req.supabaseFiles.panFile ? req.supabaseFiles.panFile : '-';
+        const gstFileName = req.supabaseFiles && req.supabaseFiles.gstFile ? req.supabaseFiles.gstFile : '-';
+        const msmeFileName = req.supabaseFiles && req.supabaseFiles.msmeFile ? req.supabaseFiles.msmeFile : '-';
 
         const sql = `INSERT INTO accounts 
         (id, print_name, account_group, opening_bal, bal_type, credit_limit, email_id, mobile_no, whatsapp_no, telephone_no, transport, station, pin_code, msme_type, dealer_type, gstin_no, pan_no, cin_no, billing_address, shipping_address, credit_days, credit_limit_val, outstanding_alert, block_sales, pan_file_name, gst_file_name, msme_file_name) 
@@ -108,9 +106,10 @@ exports.updateAccount = async (req, res) => {
         const outAlert = body.outAlert || existing[0].outstanding_alert;
         const blockSales = body.blockSales || existing[0].block_sales;
 
-        const panFileName = req.files && req.files.panFile ? req.files.panFile[0].filename : existing[0].pan_file_name;
-        const gstFileName = req.files && req.files.gstFile ? req.files.gstFile[0].filename : existing[0].gst_file_name;
-        const msmeFileName = req.files && req.files.msmeFile ? req.files.msmeFile[0].filename : existing[0].msme_file_name;
+        // Get new uploaded file names from Supabase, or keep existing ones
+        const panFileName = req.supabaseFiles && req.supabaseFiles.panFile ? req.supabaseFiles.panFile : existing[0].pan_file_name;
+        const gstFileName = req.supabaseFiles && req.supabaseFiles.gstFile ? req.supabaseFiles.gstFile : existing[0].gst_file_name;
+        const msmeFileName = req.supabaseFiles && req.supabaseFiles.msmeFile ? req.supabaseFiles.msmeFile : existing[0].msme_file_name;
 
         const sql = `UPDATE accounts SET 
         print_name=?, account_group=?, opening_bal=?, bal_type=?, credit_limit=?, email_id=?, mobile_no=?, whatsapp_no=?, 
@@ -139,7 +138,7 @@ exports.deleteAccount = async (req, res) => {
         const { id } = req.params;
         const [result] = await db.query('DELETE FROM accounts WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ status: 'Error', message: 'Account not found.' });
+            return res.status(404).json({ status: 'Error', message: 'Account deleted not found.' });
         }
         res.status(200).json({ status: 'Success', message: 'Account deleted successfully!' });
     } catch (error) {

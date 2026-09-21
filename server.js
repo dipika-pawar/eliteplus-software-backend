@@ -32,14 +32,18 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.use('/api/company', companyRoutes);     
 app.use('/api/account', accountRoutes);    
-app.use('/api/item', itemRoutes);           
-app.use('/api/user', userRoutes);          
+app.use('/api/item', itemRoutes);          
+app.use('/api/user', userRoutes);         
 app.use('/api/quotation', quotationRoutes);      
 app.use('/api/unit', unitRoutes);
 app.use('/api/tax', taxRoutes);
 
-app.use((err, req, res, next) => {
+// ✅ Root route add keli ahe (Browser var Cannot GET / error yenar nahi)
+app.get('/', (req, res) => {
+    res.json({ status: 'Success', message: 'ElitePlus Software Backend is running successfully with Supabase!' });
+});
 
+app.use((err, req, res, next) => {
     console.error("❌ Server Error Pipeline:", err.stack);
 
     res.status(500).json({
@@ -47,7 +51,6 @@ app.use((err, req, res, next) => {
         message: 'Something went wrong on the server!',
         error: err.message
     });
-
 });
 
 if (process.env.NODE_ENV !== 'production') {

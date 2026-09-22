@@ -26,7 +26,7 @@ exports.getAllCompanies = async (req, res) => {
         const result = await db.query('SELECT * FROM company_profiles ORDER BY id DESC');
         res.status(200).json(result.rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: 'Error', message: error.message });
     }
 };
 
@@ -41,7 +41,7 @@ exports.createCompany = async (req, res) => {
         } = req.body;
 
         if (!req.files || !req.files.logoFile || !req.files.qrFile || !req.files.stampFile || !req.files.signFile) {
-            return res.status(400).json({ message: "All 4 files (Logo, QR, Stamp, Signature) are mandatory to upload." });
+            return res.status(400).json({ status: 'Error', message: "All 4 files (Logo, QR, Stamp, Signature) are mandatory to upload." });
         }
 
         const logoFile = await uploadToSupabase(req.files.logoFile[0]);
@@ -62,10 +62,10 @@ exports.createCompany = async (req, res) => {
         ];
 
         const result = await db.query(sql, values);
-        res.status(201).json({ message: "Company profile saved successfully!", insertId: result.rows[0].id });
+        res.status(201).json({ status: 'Success', message: "Company profile saved successfully!", insertId: result.rows[0].id });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: 'Error', message: error.message });
     }
 };
 
@@ -82,7 +82,7 @@ exports.updateCompany = async (req, res) => {
 
         const existing = await db.query('SELECT * FROM company_profiles WHERE id = $1', [id]);
         if (existing.rows.length === 0) {
-            return res.status(404).json({ message: "Company profile not found." });
+            return res.status(404).json({ status: 'Error', message: "Company profile not found." });
         }
 
         const logoFile = req.files && req.files.logoFile ? await uploadToSupabase(req.files.logoFile[0]) : existing.rows[0].logo_file;
@@ -105,10 +105,10 @@ exports.updateCompany = async (req, res) => {
         ];
 
         await db.query(sql, values);
-        res.status(200).json({ message: "Company profile updated successfully!" });
+        res.status(200).json({ status: 'Success', message: "Company profile updated successfully!" });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: 'Error', message: error.message });
     }
 };
 
@@ -118,10 +118,10 @@ exports.deleteCompany = async (req, res) => {
         const { id } = req.params;
         const result = await db.query('DELETE FROM company_profiles WHERE id = $1', [id]);
         if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Data not found." });
+            return res.status(404).json({ status: 'Error', message: "Data not found." });
         }
-        res.status(200).json({ message: "Company profile deleted successfully." });
+        res.status(200).json({ status: 'Success', message: "Company profile deleted successfully." });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: 'Error', message: error.message });
     }
 };
